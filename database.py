@@ -1,15 +1,12 @@
+import os
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
+load_dotenv()
 
-host = "localhost" # 'aws-0-ap-southeast-1.pooler.supabase.com'
-db_name = "forum3" # 'postgres'
-port = 5432
-user = "postgres" # 'postgres.hyhxbqsvpvtbarfxwrow'
-password = "postgres" # 'sehatinnonauthentication'
-
-SQLALCHEMY_DATABASE_URL = 'postgresql://' + user + ':' + password + '@' + host + ':' + str(port) + '/' + db_name
+SQLALCHEMY_DATABASE_URL = 'postgresql://' + os.getenv("DATABASE_USER") + ':' + os.getenv("DATABASE_PASSWORD") + '@' + os.getenv("DATABASE_HOST") + ':' + str(os.getenv("DATABASE_PORT")) + '/' + os.getenv("DATABASE_NAME")
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 

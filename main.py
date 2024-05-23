@@ -1,7 +1,13 @@
-from fastapi import FastAPI
-from starlette.responses import RedirectResponse
 import uvicorn
-from src.routers import posts, comments, likes
+from fastapi import FastAPI
+
+from database import engine
+from routers import posts, comments, likes
+import models
+
+from starlette.responses import RedirectResponse
+
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 

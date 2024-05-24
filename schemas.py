@@ -55,3 +55,18 @@ class Like(LikeBase):
   class Config:
     orm_mode = True
     from_attributes = True
+
+
+class SubscribeBase(BaseModel):
+    username: str
+    post_id: UUID
+  
+class SubscribeCreate(SubscribeBase):
+  pass
+
+class Subscribe(SubscribeBase):
+  id: UUID  # keep the id field here
+
+  class Config:
+    orm_mode = True
+    from_attributes = True

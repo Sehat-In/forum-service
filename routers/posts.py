@@ -24,6 +24,12 @@ def create_post(post: schemas.PostCreate, db = Depends(get_db)):
     db.add(db_post)
     db.commit()
     db.refresh(db_post)
+
+    db_subscribe = models.Subscribe(username=post.username, post_id=db_post.id)
+    db.add(db_subscribe)
+    db.commit()
+    db.refresh(db_subscribe)
+    
     add_notification_system(db_post)
     add_user_to_notification_system(db_post, post.username)
     return db_post

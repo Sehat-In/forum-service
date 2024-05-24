@@ -69,7 +69,7 @@ def comment_exists(comment_id: UUID, db: Session):
     return comment
 
 def send_notification(post: models.Post):
-    connection = pika.BlockingConnection(pika.ConnectionParameters(os.getenv('RABBITMQ_SERVER')))
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host=os.getenv('RABBITMQ_HOST'), credentials=pika.PlainCredentials(os.getenv('RABBITMQ_USER'), os.getenv('RABBITMQ_PASSWORD'))))
     channel = connection.channel()
     channel.basic_publish(exchange=f'notification_{post.id}', routing_key='', body=f'New Comment In Post {post.title}')
     connection.close()

@@ -25,6 +25,7 @@ def create_post(post: schemas.PostCreate, db = Depends(get_db)):
     db.commit()
     db.refresh(db_post)
     add_notification_system(db_post)
+    add_user_to_notification_system(db_post, post.username)
     return db_post
 
 @router.get("/get/all", response_model=List[schemas.Post])

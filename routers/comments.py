@@ -62,7 +62,6 @@ def update_comment(comment_id: UUID, comment: schemas.CommentUpdate, db = Depend
     db.commit()
     db.refresh(db_comment)
     return db_comment
-    
 
 def comment_exists(comment_id: UUID, db: Session):
     comment = db.query(models.Comment).filter(models.Comment.id == comment_id).first()

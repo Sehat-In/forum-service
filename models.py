@@ -21,6 +21,7 @@ class Post(BaseModel):
     # Relationship with comments
     comments = relationship("Comment", back_populates="post")
     likes = relationship('Like', back_populates='post')
+    subscribes = relationship('Subscribe', back_populates='post')
 
 class Comment(BaseModel):
     __tablename__ = 'comments'
@@ -58,3 +59,17 @@ class Like(BaseModel):
         UniqueConstraint('username', 'comment_id', name='_username_comment_uc')
     )
 
+class Subscribe(BaseModel):
+    __tablename__ = 'subscribes'
+
+    username = Column(String)
+
+    # Relationship with post
+    post_id = Column(UUID(as_uuid=True), ForeignKey('posts.id'))
+    post = relationship('Post', back_populates='subscribes')
+
+    created_at = Column(DateTime, default=datetime.now)
+
+    __table_args__ = (
+        UniqueConstraint('username', 'post_id', name='_username_subscribes_uc'),
+    )

@@ -1,4 +1,6 @@
+import os
 from uuid import UUID
+from dotenv import load_dotenv
 from fastapi import APIRouter, HTTPException, Depends
 from database import get_db
 from sqlalchemy.orm import Session
@@ -7,6 +9,9 @@ from starlette import status
 from typing import List
 import schemas
 from routers import posts
+import pika
+
+load_dotenv()
 
 router = APIRouter(
     prefix="/comments",
@@ -16,7 +21,8 @@ router = APIRouter(
 
 @router.post("/create/{post_id}", status_code=status.HTTP_201_CREATED, response_model=schemas.Comment)
 def create_comment(post_id:UUID, comment: schemas.CommentCreate, db = Depends(get_db)):
-  if posts.post_exists(post_id, db):
+  post = posts.post_exists(post_id, db)
+  if post:
     db_comment = models.Comment(content=comment.content, username=comment.username, parent_post_id=post_id)
     db.add(db_comment)
     db.commit()
@@ -26,6 +32,7 @@ def create_comment(post_id:UUID, comment: schemas.CommentCreate, db = Depends(ge
     db.add(db_comment)
     db.commit()
     db.refresh(db_comment)
+  send_notification(post)
   return db_comment
 
 @router.get("/get/{post_id}", response_model=List[schemas.Comment])
@@ -60,3 +67,9 @@ def update_comment(comment_id: UUID, comment: schemas.CommentUpdate, db = Depend
 def comment_exists(comment_id: UUID, db: Session):
     comment = db.query(models.Comment).filter(models.Comment.id == comment_id).first()
     return comment
+
+def send_notification(post: models.Post):
+    connection = pika.BlockingConnection(pika.ConnectionParameters(os.getenv('RABBITMQ_SERVER')))
+    channel = connection.channel()
+    channel.basic_publish(exchange=f'notification_{post.id}', routing_key='', body=f'New Comment In Post {post.title}')
+    connection.close()

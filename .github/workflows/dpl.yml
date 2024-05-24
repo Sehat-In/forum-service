@@ -29,6 +29,8 @@ jobs:
             DATABASE_USER=${{secrets.DATABASE_USER}}
             DATABASE_PASSWORD=${{secrets.DATABASE_PASSWORD}}
             RABBITMQ_SERVER=${{secrets.RABBITMQ_SERVER}}
+            RABBITMQ_USER=${{secrets.RABBITMQ_USER}}
+            RABBITMQ_PASSWORD=${{secrets.RABBITMQ_PASSWORD}}
     if: github.ref == 'refs/heads/main'
 
   deploy:

@@ -72,13 +72,13 @@ def post_exists(post_id: UUID, db: Session):
     return post
 
 def add_notification_system(db_post: models.Post):
-    connection = pika.BlockingConnection(pika.ConnectionParameters(os.getenv('RABBITMQ_SERVER')))
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host=os.getenv('RABBITMQ_HOST'), credentials=pika.PlainCredentials(os.getenv('RABBITMQ_USER'), os.getenv('RABBITMQ_PASSWORD'))))
     channel = connection.channel()
     channel.exchange_declare(exchange=f'notification_{db_post.id}', exchange_type='fanout')
     connection.close()
 
 def add_user_to_notification_system(db_post: models.Post, username: str):
-    connection = pika.BlockingConnection(pika.ConnectionParameters(os.getenv('RABBITMQ_SERVER')))
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host=os.getenv('RABBITMQ_HOST'), credentials=pika.PlainCredentials(os.getenv('RABBITMQ_USER'), os.getenv('RABBITMQ_PASSWORD'))))
     channel = connection.channel()
     channel.queue_declare(queue=f'notification_{db_post.id}_{username}')
     channel.queue_bind(exchange=f'notification_{db_post.id}', queue=f'notification_{db_post.id}_{username}')

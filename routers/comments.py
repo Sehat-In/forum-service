@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 from uuid import UUID
 from dotenv import load_dotenv
@@ -32,7 +33,7 @@ def create_comment(post_id:UUID, comment: schemas.CommentCreate, db = Depends(ge
     db.add(db_comment)
     db.commit()
     db.refresh(db_comment)
-  send_notification(post)
+  send_notification(post, comment.username)
   return db_comment
 
 @router.get("/get/{post_id}", response_model=List[schemas.Comment])
@@ -67,8 +68,8 @@ def comment_exists(comment_id: UUID, db: Session):
     comment = db.query(models.Comment).filter(models.Comment.id == comment_id).first()
     return comment
 
-def send_notification(post: models.Post):
+def send_notification(post: models.Post, comment_username: str):
     connection = pika.BlockingConnection(pika.ConnectionParameters(host=os.getenv('RABBITMQ_SERVER'), credentials=pika.PlainCredentials(os.getenv('RABBITMQ_USERNAME'), os.getenv('RABBITMQ_PASSWORD'))))
     channel = connection.channel()
-    channel.basic_publish(exchange=f'notification_{post.id}', routing_key='', body=f'New Comment In Post {post.title}')
+    channel.basic_publish(exchange=f'notification_{post.id}', routing_key='', body=f'New Comment In Post {post.title} by {comment_username} at {datetime.now()}')
     connection.close()

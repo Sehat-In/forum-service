@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 from uuid import UUID
 from dotenv import load_dotenv
@@ -70,5 +71,5 @@ def comment_exists(comment_id: UUID, db: Session):
 def send_notification(post: models.Post, comment_username: str):
     connection = pika.BlockingConnection(pika.ConnectionParameters(host=os.getenv('RABBITMQ_SERVER'), credentials=pika.PlainCredentials(os.getenv('RABBITMQ_USERNAME'), os.getenv('RABBITMQ_PASSWORD'))))
     channel = connection.channel()
-    channel.basic_publish(exchange=f'notification_{post.id}', routing_key='', body=f'New Comment In Post {post.title} by {comment_username}')
+    channel.basic_publish(exchange=f'notification_{post.id}', routing_key='', body=f'New Comment In Post {post.title} by {comment_username} at {datetime.now()}')
     connection.close()

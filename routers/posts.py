@@ -126,20 +126,20 @@ def check_user_notification(username: str):
 def get_user_notifications(username: str):
     messages = []
     def callback(ch, method, properties, body):
-        messages.append(body)   
+        messages.append(body)
         if (len(messages) == message_count):
             ch.stop_consuming()
     
     connection = pika.BlockingConnection(pika.ConnectionParameters(host=os.getenv('RABBITMQ_SERVER'), credentials=pika.PlainCredentials(os.getenv('RABBITMQ_USERNAME'), os.getenv('RABBITMQ_PASSWORD'))))
     channel = connection.channel()
     message_count = channel.queue_declare(queue=f'notification_{username}', passive=True).method.message_count
-    channel.basic_consume(queue=f'notification_{username}', on_message_callback=callback)
-    try:
-        channel.start_consuming()
-    except pika.exceptions.ConsumerCancelled:
-        pass
+    if message_count != 0:
+        channel.basic_consume(queue=f'notification_{username}', on_message_callback=callback)
+        try:
+            channel.start_consuming()
+        except pika.exceptions.ConsumerCancelled:
+            pass
     connection.close()
-
     return messages
 
 def unsubscribe_from_post(username:str, post_id:UUID, db: Session):

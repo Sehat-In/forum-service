@@ -54,7 +54,7 @@ def delete_post(post_id: UUID, db = Depends(get_db)):
     db.delete(db_post)
     db.commit()
     delete_exchange(post_id)
-    return db_post
+    return Response(status_code=200, content="Post deleted")
 
 @router.put("/update/{post_id}", response_model=schemas.Post)
 def update_post(post_id: UUID, post: schemas.PostUpdate, db = Depends(get_db)):

@@ -85,6 +85,10 @@ def check_notification(username: str):
 def get_notifications(username: str):
     return get_user_notifications(username)
 
+@router.get("/remove-notifications/{username}")
+def remove_notifications(username: str):
+    return remove_user_notifications(username)
+
 @router.delete("/unsubscribe")
 def unsubscribe(subscribe: schemas.SubscribeCreate, db = Depends(get_db)):
     db_subscribe = unsubscribe_from_post(subscribe.username, subscribe.post_id, db)
@@ -135,6 +139,25 @@ def get_user_notifications(username: str):
     message_count = channel.queue_declare(queue=f'notification_{username}', passive=True).method.message_count
     if message_count != 0:
         channel.basic_consume(queue=f'notification_{username}', on_message_callback=callback)
+        try:
+            channel.start_consuming()
+        except pika.exceptions.ConsumerCancelled:
+            pass
+    connection.close()
+    return messages
+
+def remove_user_notifications(username: str):
+    messages = []
+    def callback(ch, method, properties, body):
+        messages.append(body)
+        if (len(messages) == message_count):
+            ch.stop_consuming()
+    
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host=os.getenv('RABBITMQ_SERVER'), credentials=pika.PlainCredentials(os.getenv('RABBITMQ_USERNAME'), os.getenv('RABBITMQ_PASSWORD'))))
+    channel = connection.channel()
+    message_count = channel.queue_declare(queue=f'notification_{username}', passive=True).method.message_count
+    if message_count != 0:
+        channel.basic_consume(queue=f'notification_{username}', on_message_callback=callback, auto_ack=True)
         try:
             channel.start_consuming()
         except pika.exceptions.ConsumerCancelled:

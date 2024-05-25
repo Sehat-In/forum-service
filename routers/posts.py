@@ -1,3 +1,4 @@
+from http.client import HTTPResponse
 import os
 from uuid import UUID
 from dotenv import load_dotenv
@@ -9,6 +10,7 @@ from starlette import status
 from typing import List
 import schemas
 import pika
+from fastapi import Response
 
 load_dotenv()
 
@@ -51,6 +53,7 @@ def delete_post(post_id: UUID, db = Depends(get_db)):
     db_post = post_exists(post_id, db)
     db.delete(db_post)
     db.commit()
+    delete_exchange(post_id)
     return db_post
 
 @router.put("/update/{post_id}", response_model=schemas.Post)
@@ -74,6 +77,26 @@ def subscribe_to_post(subscribe: schemas.SubscribeCreate, db = Depends(get_db)):
     add_user_to_notification_system(db_post, subscribe.username)
     return db_subscribe
 
+@router.get("/check-notification/{username}")
+def check_notification(username: str):
+    return check_user_notification(username)
+
+@router.get("/get-notifications/{username}")
+def get_notifications(username: str):
+    return get_user_notifications(username)
+
+@router.delete("/unsubscribe")
+def unsubscribe(subscribe: schemas.SubscribeCreate, db = Depends(get_db)):
+    db_subscribe = unsubscribe_from_post(subscribe.username, subscribe.post_id, db)
+    if db_subscribe is None:
+        raise HTTPException(status_code=404, detail="Subscription not found")
+    unbind_exchange(subscribe.username, subscribe.post_id)
+    return Response(status_code=200, content="Unsubscribed")
+
+@router.get("/get-subscriptions/{username}", response_model=List[schemas.Subscribe])
+def get_subscriptions(username: str, db = Depends(get_db)):
+    return db.query(models.Subscribe).filter(models.Subscribe.username == username).all()
+
 def post_exists(post_id: UUID, db: Session):
     post = db.query(models.Post).filter(models.Post.id == post_id).first()
     return post
@@ -89,4 +112,50 @@ def add_user_to_notification_system(db_post: models.Post, username: str):
     channel = connection.channel()
     channel.queue_declare(queue=f'notification_{username}')
     channel.queue_bind(exchange=f'notification_{db_post.id}', queue=f'notification_{username}')
+    connection.close()
+
+def check_user_notification(username: str):
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host=os.getenv('RABBITMQ_SERVER'), credentials=pika.PlainCredentials(os.getenv('RABBITMQ_USERNAME'), os.getenv('RABBITMQ_PASSWORD'))))
+    channel = connection.channel()
+    method_frame, _, _ = channel.basic_get(queue=f'notification_{username}')
+    connection.close()
+    if method_frame:
+        return Response(status_code=200, content="You have notification!")
+    raise HTTPException(status_code=404, detail="No notification")
+
+def get_user_notifications(username: str):
+    messages = []
+    def callback(ch, method, properties, body):
+        messages.append(body)   
+        if (len(messages) == message_count):
+            ch.stop_consuming()
+    
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host=os.getenv('RABBITMQ_SERVER'), credentials=pika.PlainCredentials(os.getenv('RABBITMQ_USERNAME'), os.getenv('RABBITMQ_PASSWORD'))))
+    channel = connection.channel()
+    message_count = channel.queue_declare(queue=f'notification_{username}', passive=True).method.message_count
+    channel.basic_consume(queue=f'notification_{username}', on_message_callback=callback)
+    try:
+        channel.start_consuming()
+    except pika.exceptions.ConsumerCancelled:
+        pass
+    connection.close()
+
+    return messages
+
+def unsubscribe_from_post(username:str, post_id:UUID, db: Session):
+    db_subscribe = db.query(models.Subscribe).filter(models.Subscribe.username == username, models.Subscribe.post_id == post_id).first()
+    db.delete(db_subscribe)
+    db.commit()
+    return db_subscribe
+
+def unbind_exchange(username: str, post_id: UUID):
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host=os.getenv('RABBITMQ_SERVER'), credentials=pika.PlainCredentials(os.getenv('RABBITMQ_USERNAME'), os.getenv('RABBITMQ_PASSWORD'))))
+    channel = connection.channel()
+    channel.queue_unbind(queue=f'notification_{username}', exchange=f'notification_{post_id}')
+    connection.close()
+
+def delete_exchange(post_id: UUID):
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host=os.getenv('RABBITMQ_SERVER'), credentials=pika.PlainCredentials(os.getenv('RABBITMQ_USERNAME'), os.getenv('RABBITMQ_PASSWORD'))))
+    channel = connection.channel()
+    channel.exchange_delete(exchange=f'notification_{post_id}')
     connection.close()

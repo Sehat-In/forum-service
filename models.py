@@ -19,9 +19,9 @@ class Post(BaseModel):
     created_at = Column(DateTime, default=datetime.now)
 
     # Relationship with comments
-    comments = relationship("Comment", back_populates="post")
-    likes = relationship('Like', back_populates='post')
-    subscribes = relationship('Subscribe', back_populates='post')
+    comments = relationship("Comment", back_populates="post", cascade="all, delete")
+    likes = relationship('Like', back_populates='post', cascade="all, delete")
+    subscribes = relationship('Subscribe', back_populates='post', cascade="all, delete")
 
 class Comment(BaseModel):
     __tablename__ = 'comments'
@@ -38,9 +38,6 @@ class Comment(BaseModel):
     parent_comment_id = Column(UUID(as_uuid=True), ForeignKey('comments.id'))
     children = relationship("Comment", backref="parent_comment", remote_side="[Comment.id]")
 
-    likes = relationship('Like', back_populates='comment')
-
-
 class Like(BaseModel):
     __tablename__ = 'likes'
 
@@ -49,14 +46,9 @@ class Like(BaseModel):
     # Relationship with post
     post_id = Column(UUID(as_uuid=True), ForeignKey('posts.id'))
     post = relationship('Post', back_populates='likes')
-    
-    # Relationship with comment
-    comment_id = Column(UUID(as_uuid=True), ForeignKey('comments.id'))
-    comment = relationship('Comment', back_populates='likes')
 
     __table_args__ = (
-        UniqueConstraint('username', 'post_id', name='_username_post_uc'),
-        UniqueConstraint('username', 'comment_id', name='_username_comment_uc')
+        UniqueConstraint('username', 'post_id', name='_username_post_uc')
     )
 
 class Subscribe(BaseModel):

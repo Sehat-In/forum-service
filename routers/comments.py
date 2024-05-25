@@ -15,7 +15,7 @@ import pika
 load_dotenv()
 
 router = APIRouter(
-    prefix="/comments",
+    prefix="/api/v1/comments",
     tags=["comments"],
     responses={404: {"description": "Not found"}},
 )

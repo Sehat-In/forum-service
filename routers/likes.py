@@ -7,7 +7,7 @@ from typing import List
 from sqlalchemy.orm import Session
 
 router = APIRouter(
-    prefix="/likes",
+    prefix="/api/v1/likes",
     tags=["likes"],
     responses={404: {"description": "Not found"}},
 )

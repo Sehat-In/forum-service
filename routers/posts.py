@@ -15,7 +15,7 @@ from fastapi import Response
 load_dotenv()
 
 router = APIRouter(
-    prefix="/posts",
+    prefix="/api/v1/posts",
     tags=["posts"],
     responses={404: {"description": "Not found"}},
 )

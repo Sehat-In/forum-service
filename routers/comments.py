@@ -24,17 +24,19 @@ router = APIRouter(
 def create_comment(post_id:UUID, comment: schemas.CommentCreate, db = Depends(get_db)):
   post = posts.post_exists(post_id, db)
   if post:
-    db_comment = models.Comment(content=comment.content, username=comment.username, parent_post_id=post_id)
+    db_comment = models.Comment(content=comment.content, username=comment.username, parent_post_id=post_id, parrent_comment_id=None)
     db.add(db_comment)
     db.commit()
     db.refresh(db_comment)
     send_notification(post, comment.username)
   comment = comment_exists(post_id, db)
   if comment:
-    db_comment = models.Comment(content=comment.content, username=comment.username, parent_comment_id=post_id, parent_post_id=comment.parent_post_id)
+    db_comment = models.Comment(content=comment.content, username=comment.username, parent_comment_id=comment.id, parent_post_id=comment.parent_post_id)
     db.add(db_comment)
     db.commit()
     db.refresh(db_comment)
+
+    post = posts.post_exists(comment.parent_post_id, db)
     send_notification(post, comment.username)
   return db_comment
 

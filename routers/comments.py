@@ -29,9 +29,9 @@ def create_comment(post_id:UUID, comment: schemas.CommentCreate, db = Depends(ge
     db.commit()
     db.refresh(db_comment)
     send_notification(post, comment.username)
-  comment = comment_exists(post_id, db)
-  if comment:
-    db_comment = models.Comment(content=comment.content, username=comment.username, parent_comment_id=comment.id, parent_post_id=comment.parent_post_id)
+  temp = comment_exists(post_id, db)
+  if temp:
+    db_comment = models.Comment(content=comment.content, username=comment.username, parent_comment_id=temp.id, parent_post_id=temp.parent_post_id)
     db.add(db_comment)
     db.commit()
     db.refresh(db_comment)

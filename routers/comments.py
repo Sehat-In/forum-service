@@ -28,14 +28,14 @@ def create_comment(post_id:UUID, comment: schemas.CommentCreate, db = Depends(ge
     db.add(db_comment)
     db.commit()
     db.refresh(db_comment)
-    send_notification(db_comment.parent_post_id, comment.username)
+    send_notification(post, comment.username)
   comment = comment_exists(post_id, db)
   if comment:
     db_comment = models.Comment(content=comment.content, username=comment.username, parent_comment_id=post_id, parent_post_id=comment.parent_post_id)
     db.add(db_comment)
     db.commit()
     db.refresh(db_comment)
-    send_notification(db_comment.parent_post_id, comment.username)
+    send_notification(post, comment.username)
   return db_comment
 
 @router.get("/get/{post_id}", response_model=List[schemas.Comment])

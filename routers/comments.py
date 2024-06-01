@@ -33,7 +33,7 @@ def create_comment(post_id:UUID, comment: schemas.CommentCreate, db = Depends(ge
     db.add(db_comment)
     db.commit()
     db.refresh(db_comment)
-  send_notification(post, comment.username)
+  send_notification(db_comment.parent_post_id, comment.username)
   return db_comment
 
 @router.get("/get/{post_id}", response_model=List[schemas.Comment])

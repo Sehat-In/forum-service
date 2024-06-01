@@ -30,13 +30,14 @@ def create_comment(post_id:UUID, comment: schemas.CommentCreate, db = Depends(ge
     db.refresh(db_comment)
     send_notification(post, comment.username)
   temp = comment_exists(post_id, db)
+  print(temp.parent_post_id)
   if temp:
     db_comment = models.Comment(content=comment.content, username=comment.username, parent_comment_id=temp.id, parent_post_id=temp.parent_post_id)
     db.add(db_comment)
     db.commit()
     db.refresh(db_comment)
 
-    post = posts.post_exists(comment.parent_post_id, db)
+    post = posts.post_exists(temp.parent_post_id, db)
     send_notification(post, comment.username)
   return db_comment
 

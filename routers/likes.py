@@ -27,6 +27,25 @@ def like_post(post_id:UUID, like: schemas.LikeCreate, db = Depends(get_db)):
     return db_like
 
 
+@router.delete("/remove/{post_id}")
+def remove_like(post_id: UUID, like: schemas.UsernameRequest, db = Depends(get_db)):
+    db_like = db.query(models.Like).filter(
+        (models.Like.post_id == post_id) &
+        (models.Like.username == like.username)
+    ).first()
+    db.delete(db_like)
+    db.commit()
+    return db_like
+
+@router.post("/get-user/{post_id}", response_model=schemas.Like)
+def get_like_from_user(post_id: UUID, like: schemas.UsernameRequest, db: Session = Depends(get_db)):
+    db_like = db.query(models.Like).filter(
+        (models.Like.post_id == post_id) &
+        (models.Like.username == like.username)
+    ).first()
+    return db_like
+
+
 @router.get("/get/{post_id}", response_model=List[schemas.Like])
 def get_likes(post_id: UUID, db: Session = Depends(get_db)):
     post = posts.post_exists(post_id, db) or comments.comment_exists(post_id, db)

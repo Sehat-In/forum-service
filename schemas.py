@@ -49,6 +49,9 @@ class LikeBase(BaseModel):
 class LikeCreate(LikeBase):
   pass
 
+class UsernameRequest(LikeBase):
+    username: str
+
 class Like(LikeBase):
   id: UUID
 

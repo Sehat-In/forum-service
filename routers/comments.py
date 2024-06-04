@@ -53,6 +53,13 @@ def get_comments(post_id: UUID, db: Session = Depends(get_db)):
 
     return comments
 
+@router.get("/get-comment/{comment_id}", response_model=schemas.Comment)
+def get_comment(comment_id: UUID, db: Session = Depends(get_db)):
+    comment = db.query(models.Comment).filter(models.Comment.id == comment_id).first()
+    if not comment:
+        raise HTTPException(status_code=404, detail="Post not found")
+    return comment
+
 @router.delete("/delete/{comment_id}")
 def delete_comment(comment_id: UUID, db = Depends(get_db)):
     db_comment = comment_exists(comment_id, db)
